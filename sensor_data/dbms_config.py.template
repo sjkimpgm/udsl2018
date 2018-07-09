@@ -1,0 +1,7 @@
+# fill 'DBMS_USER', 'DBMS_PASSWD', 'DBMS_HOST' and then rename it as 'udsl_storage_config.py'
+
+DBMS_USER = <user>
+DBMS_PASSWD = <password>
+DBMS_DATABASE = 'urban_sensor'
+DBMS_HOST = <ip address of storage server>
+DBMS_PORT = 3306
