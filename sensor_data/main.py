@@ -40,7 +40,7 @@ def get_db():
 def check_credential(code):
     if code is None:
         return (False, "Please provide your creential code")
-    elif code == allowed_codes[1]:
+    elif code in allowed_codes:
         return (True, "")
     else:
         return (False, "Invalid credential code")
@@ -148,4 +148,4 @@ api.add_resource(DeleteValue, '/delete/<string:sensor_name>/<int:id>')
 api.add_resource(DeleteAllValues, '/delete_all/<string:sensor_name>')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')

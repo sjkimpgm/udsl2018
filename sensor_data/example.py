@@ -1,6 +1,8 @@
 from requests import post
 import json
 
+# Configurations
+api_url_prefix = "<url>"
 credential = "<code>"
 
 # API url format
@@ -17,7 +19,8 @@ credential = "<code>"
 #-----------------------------------------------
 for i in range(5):
     new_data = """{"sensor_name":"PM25", "name":"pm2007", "timestamp": "18-05-11 14:34:56.382242", "latitude": 37.45, "longitude": 126.8, "value":12.7}"""
-    ret = post('http://localhost:5000/new/PM25', data={"data": new_data, "credential": credential}).json()
+    ret = post('{0}/new/PM25'.format(api_url_prefix), data={"data": new_data, "credential": credential}).json()
+    print(ret)
     new_id = ret['id']
     print("New value is inserted, ID: {0}".format(new_id))
 
@@ -28,7 +31,7 @@ for i in range(5):
 #-----------------------------------------------
 # 2. Retrieve one value
 #-----------------------------------------------
-ret = post('http://localhost:5000/get/PM25/{0}'.format(new_id), data={"credential": credential}).json()
+ret = post('{0}/get/PM25/{1}'.format(api_url_prefix, new_id), data={"credential": credential}).json()
 value = json.loads(ret['data'])
 print("ID {0} value is retrieved: {1}".format(new_id, value))
 
@@ -40,7 +43,7 @@ print("ID {0} value is retrieved: {1}".format(new_id, value))
 #-----------------------------------------------
 # 3. Retrieve all values
 #-----------------------------------------------
-ret = post('http://localhost:5000/get_all/PM25', data={"credential": credential}).json()
+ret = post('{0}/get_all/PM25'.format(api_url_prefix), data={"credential": credential}).json()
 values = json.loads(ret['data'])
 print("{0} values are retrieved".format(len(values)))
 
@@ -52,7 +55,7 @@ print("{0} values are retrieved".format(len(values)))
 #-----------------------------------------------
 # 4. Delete one value
 #-----------------------------------------------
-ret = post('http://localhost:5000/delete/PM25/{0}'.format(new_id), data={"credential": credential}).json()
+ret = post('{0}/delete/PM25/{1}'.format(api_url_prefix, new_id), data={"credential": credential}).json()
 print("{0} value is deleted".format(ret['count']))
 
 # Response field
@@ -62,7 +65,7 @@ print("{0} value is deleted".format(ret['count']))
 #-----------------------------------------------
 # 5. Delete all
 #-----------------------------------------------
-ret = post('http://localhost:5000/delete_all/PM25', data={"credential": credential}).json()
+ret = post('{0}/delete_all/PM25'.format(api_url_prefix), data={"credential": credential}).json()
 print("{0} values are deleted".format(ret['count']))
 
 # Response field
