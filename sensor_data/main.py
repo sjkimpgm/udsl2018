@@ -69,7 +69,7 @@ class NewValue(Resource):
         return {"status": "OK", "id": new_id}
 
 class GetValue(Resource):
-    def post(self, sensor_name, id):
+    def get(self, sensor_name):
         args = parser.parse_args()
         (allowed, msg) = check_credential(args['credential'])
         if not allowed:
@@ -77,8 +77,8 @@ class GetValue(Resource):
 
         cursor = get_db()
         cursor.execute("""
-        SELECT * FROM {0} where id = %s
-        """.format(sensor_name), (id,))
+        SELECT * FROM {0} ORDER BY timestamp DESC LIMIT 1
+        """.format(sensor_name))
 
         row = cursor.fetchone()
         if row is None:
@@ -90,8 +90,8 @@ class GetValue(Resource):
 
         return {"status": "OK", "count": cursor.rowcount, "data": json.dumps(row)}
 
-class GetAllValues(Resource):
-    def post(self, sensor_name):
+class GetRange(Resource):
+    def get(self, sensor_name, start_ts, end_ts):
         args = parser.parse_args()
         (allowed, msg) = check_credential(args['credential'])
         if not allowed:
@@ -99,8 +99,8 @@ class GetAllValues(Resource):
 
         cursor = get_db()
         cursor.execute("""
-        SELECT * FROM {0} order by id
-        """.format(sensor_name))
+        SELECT * FROM {0} WHERE timestamp >= %s AND timestamp <= %s ORDER BY timestamp 
+        """.format(sensor_name), (start_ts, end_ts))
 
         rows = cursor.fetchall()
         rows_json = []
@@ -142,10 +142,10 @@ class DeleteAllValues(Resource):
         return {"status": "OK", "count": cursor.rowcount}
 
 api.add_resource(NewValue, '/new/<string:sensor_name>')
-api.add_resource(GetValue, '/get/<string:sensor_name>/<int:id>')
-api.add_resource(GetAllValues, '/get_all/<string:sensor_name>')
+api.add_resource(GetValue, '/get/<string:sensor_name>')
+api.add_resource(GetRange, '/get_range/<string:sensor_name>/<start_ts>/<end_ts>')
 api.add_resource(DeleteValue, '/delete/<string:sensor_name>/<int:id>')
 api.add_resource(DeleteAllValues, '/delete_all/<string:sensor_name>')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', ssl_context=('cert.pem', 'key.pem'))
