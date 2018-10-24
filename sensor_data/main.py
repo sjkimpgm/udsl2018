@@ -49,7 +49,7 @@ def check_credential(code):
 ## API
 #############
 class NewValue(Resource):
-    def post(self, sensor_name):
+    def post(self, data_name):
         args = parser.parse_args()
         (allowed, msg) = check_credential(args['credential'])
         if not allowed:
@@ -59,17 +59,17 @@ class NewValue(Resource):
 
         cursor = get_db()
         cursor.execute("""
-            INSERT INTO {0} (name, timestamp, latitude, longitude, value) 
-            VALUES (%s, %s, %s, %s, %s)
-            """.format(sensor_name), 
-            (data['name'], data['timestamp'], data['latitude'], data['longitude'], data['value']))
+            INSERT INTO urban (data_name, sensor_name, sensor_id, timestamp, latitude, longitude, value) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
+            (data_name, data['sensor_name'], data['sensor_id'], data['timestamp'], data['latitude'], data['longitude'], data['value']))
 
         new_id = cursor.lastrowid
 
         return {"status": "OK", "id": new_id}
 
 class GetValue(Resource):
-    def get(self, sensor_name):
+    def get(self, data_name):
         args = parser.parse_args()
         (allowed, msg) = check_credential(args['credential'])
         if not allowed:
@@ -77,21 +77,21 @@ class GetValue(Resource):
 
         cursor = get_db()
         cursor.execute("""
-        SELECT * FROM {0} ORDER BY timestamp DESC LIMIT 1
-        """.format(sensor_name))
+        SELECT * FROM urban WHERE data_name = %s ORDER BY timestamp DESC LIMIT 1
+        """, (data_name,))
 
         row = cursor.fetchone()
         if row is None:
             return {"status": "ERROR", "message": "Invalid id"}
 
-        (id, name, timestamp, latitude, longitude, value) = row
+        (id, data_name, sensor_name, sensor_id, timestamp, latitude, longitude, value) = row
         timestamp = str(timestamp)
-        row = {"id": id, "name": name, "count": 1, "timestamp": timestamp, "latitude": latitude, "longitude": longitude, "value": value}
+        row = {"id": id, "data_name": data_name, "sensor_name": sensor_name, "sensor_id": sensor_id, "timestamp": timestamp, "latitude": latitude, "longitude": longitude, "value": value}
 
         return {"status": "OK", "count": cursor.rowcount, "data": json.dumps(row)}
 
 class GetRange(Resource):
-    def get(self, sensor_name, start_ts, end_ts):
+    def get(self, data_name, start_ts, end_ts):
         args = parser.parse_args()
         (allowed, msg) = check_credential(args['credential'])
         if not allowed:
@@ -99,19 +99,20 @@ class GetRange(Resource):
 
         cursor = get_db()
         cursor.execute("""
-        SELECT * FROM {0} WHERE timestamp >= %s AND timestamp <= %s ORDER BY timestamp 
-        """.format(sensor_name), (start_ts, end_ts))
+        SELECT * FROM urban WHERE data_name = %s AND timestamp >= %s AND timestamp <= %s ORDER BY timestamp 
+        """, (data_name, start_ts, end_ts))
 
         rows = cursor.fetchall()
         rows_json = []
-        for (id, name, timestamp, latitude, longitude, value) in rows:
+        for (id, data_name, sensor_name, sensor_id, timestamp, latitude, longitude, value) in rows:
             timestamp = str(timestamp)
-            rows_json.append({"id": id, "name": name, "timestamp": timestamp, "latitude": latitude, "longitude": longitude, "value": value})
+            row = {"id": id, "data_name": data_name, "sensor_name": sensor_name, "sensor_id": sensor_id, "timestamp": timestamp, "latitude": latitude, "longitude": longitude, "value": value}
+            rows_json.append(row)
 
         return {"status": "OK", "count": cursor.rowcount, "data": json.dumps(rows_json)}
 
 class DeleteValue(Resource):
-    def post(self, sensor_name, id):
+    def post(self, data_name, id):
         args = parser.parse_args()
         (allowed, msg) = check_credential(args['credential'])
         if not allowed:
@@ -119,8 +120,8 @@ class DeleteValue(Resource):
 
         cursor = get_db()
         cursor.execute("""
-        DELETE FROM {0} where id = %s
-        """.format(sensor_name), (id,))
+        DELETE FROM urban WHERE data_name = %s AND id = %s
+        """, (data_name, id,))
 
         if cursor.rowcount == 0:
             return {"status": "ERROR", "message": "Invalid id"}
@@ -128,7 +129,7 @@ class DeleteValue(Resource):
         return {"status": "OK", "count": cursor.rowcount}
 
 class DeleteAllValues(Resource):
-    def post(self, sensor_name):
+    def post(self, data_name):
         args = parser.parse_args()
         (allowed, msg) = check_credential(args['credential'])
         if not allowed:
@@ -136,16 +137,16 @@ class DeleteAllValues(Resource):
 
         cursor = get_db()
         cursor.execute("""
-        DELETE FROM {0}
-        """.format(sensor_name))
+        DELETE FROM urban WHERE data_name = %s
+        """, (data_name,))
 
         return {"status": "OK", "count": cursor.rowcount}
 
-api.add_resource(NewValue, '/new/<string:sensor_name>')
-api.add_resource(GetValue, '/get/<string:sensor_name>')
-api.add_resource(GetRange, '/get_range/<string:sensor_name>/<start_ts>/<end_ts>')
-api.add_resource(DeleteValue, '/delete/<string:sensor_name>/<int:id>')
-api.add_resource(DeleteAllValues, '/delete_all/<string:sensor_name>')
+api.add_resource(NewValue, '/new/<string:data_name>')
+api.add_resource(GetValue, '/get/<string:data_name>')
+api.add_resource(GetRange, '/get_range/<string:data_name>/<start_ts>/<end_ts>')
+api.add_resource(DeleteValue, '/delete/<string:data_name>/<int:id>')
+api.add_resource(DeleteAllValues, '/delete_all/<string:data_name>')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', ssl_context=('cert.pem', 'key.pem'))
