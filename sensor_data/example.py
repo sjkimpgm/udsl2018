@@ -40,6 +40,15 @@ for i in range(5):
 #  - id: id of inserted row(value)
 
 #-----------------------------------------------
+# 1-2. Insert new value with invalid data name
+#-----------------------------------------------
+new_data = """{"sensor_name":"pm2007", "sensor_id":"AABBCCDDEEFF", "timestamp": "2018-05-11 14:00:00.000000", "latitude": 37.45, "longitude": 126.8, "value":12.7}"""
+ret = post('{0}/new/{1}'.format(api_url_prefix, "INVALID_DATA_NAME"), data={"data": new_data, "credential": credential}, verify='cert.pem').json()
+assert(ret['status'] == "ERROR")
+assert(ret['message'] == "Invalid data name")
+print("Invalid data name is rejected")
+
+#-----------------------------------------------
 # 2. Retrieve last(based on 'timestamp' field) value
 #-----------------------------------------------
 ret = get('{0}/get/PM25'.format(api_url_prefix), data={"credential": credential}, verify='cert.pem').json()

@@ -18,6 +18,25 @@ api = Api(app)
 from dbms_config import *
 from credential import *
 
+DATA_NAME_LISTS = [
+    "PM1",
+    "PM25",
+    "PM10",
+    "TEMPERATURE",
+    "PRESSURE",
+    "HUMIDITY",
+    "AIR_SPEED",
+    "VISIBLE_LIGHT_INTENSITY",
+    "NEAR_IR_LIGHT_INTENSITY",
+    "TVOC",
+    "CO2",
+    "SO2",
+    "CO",
+    "O3",
+    "NO2",
+    "H2S",
+]
+
 #############
 ## Utilities
 #############
@@ -45,6 +64,14 @@ def check_credential(code):
     else:
         return (False, "Invalid credential code")
 
+def check_data_name(data_name):
+    if data_name is None:
+        return (False, "Please provide data name")
+    elif data_name in DATA_NAME_LISTS:
+        return (True, "")
+    else:
+        return (False, "Invalid data name")
+
 #############
 ## API
 #############
@@ -52,6 +79,10 @@ class NewValue(Resource):
     def post(self, data_name):
         args = parser.parse_args()
         (allowed, msg) = check_credential(args['credential'])
+        if not allowed:
+            return {"status": "ERROR", "message": msg}, 400
+
+        (allowed, msg) = check_data_name(data_name)
         if not allowed:
             return {"status": "ERROR", "message": msg}, 400
 
@@ -72,6 +103,10 @@ class GetValue(Resource):
     def get(self, data_name):
         args = parser.parse_args()
         (allowed, msg) = check_credential(args['credential'])
+        if not allowed:
+            return {"status": "ERROR", "message": msg}, 400
+
+        (allowed, msg) = check_data_name(data_name)
         if not allowed:
             return {"status": "ERROR", "message": msg}, 400
 
@@ -97,6 +132,10 @@ class GetRange(Resource):
         if not allowed:
             return {"status": "ERROR", "message": msg}, 400
 
+        (allowed, msg) = check_data_name(data_name)
+        if not allowed:
+            return {"status": "ERROR", "message": msg}, 400
+
         cursor = get_db()
         cursor.execute("""
         SELECT * FROM urban WHERE data_name = %s AND timestamp >= %s AND timestamp <= %s ORDER BY timestamp 
@@ -118,6 +157,10 @@ class DeleteValue(Resource):
         if not allowed:
             return {"status": "ERROR", "message": msg}, 400
 
+        (allowed, msg) = check_data_name(data_name)
+        if not allowed:
+            return {"status": "ERROR", "message": msg}, 400
+
         cursor = get_db()
         cursor.execute("""
         DELETE FROM urban WHERE data_name = %s AND id = %s
@@ -132,6 +175,10 @@ class DeleteAllValues(Resource):
     def post(self, data_name):
         args = parser.parse_args()
         (allowed, msg) = check_credential(args['credential'])
+        if not allowed:
+            return {"status": "ERROR", "message": msg}, 400
+
+        (allowed, msg) = check_data_name(data_name)
         if not allowed:
             return {"status": "ERROR", "message": msg}, 400
 
